@@ -34,7 +34,7 @@ Krishi Sahayak is your virtual farming assistant, a super Telegram bot designed 
 * Google Bard API Key
 
 ## Installation
-1. Search for "Krishi Sahayak" on Telegram or click [here](t.me/krishi_sahayak_bot) to start a chat with the bot.
+1. Search for "Krishi Sahayak" on Telegram or click [here]([t.me/krishi_sahayak_bot](https://web.telegram.org/k/#@krishi_sahayak_bot)) to start a chat with the bot.
 
 2. Follow the on-screen instructions to interact with Krishi Sahayak and ask your agricultural queries.
 
