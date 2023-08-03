@@ -7,11 +7,11 @@ from moviepy.editor import AudioFileClip
 
 
 bard = Bard(
-    token="ZAgcncnDFFOETWfwkkCNbWAMF7ys2xmHDxjIU7daHOJb0-cvJSIdilvmjWj2PNhIKEZ2Nw.")
+    token="Your-BARD-API-Key")
 
 
-openai.api_key = "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"
-TELEGRAM_API_TOKEN = "6382760181:AAEFQapqghrK0nCBBih-7DFX9jYyPLqKoPk"
+openai.api_key = "Your-OpenAI-API-Key"
+TELEGRAM_API_TOKEN = "Telegram-API-Key"
 
 messages = [{"role": "system", "content": "You are Super Telegram GPT, a virtual agricultural \
             advisor in a Telegram bot that performs following task:\
