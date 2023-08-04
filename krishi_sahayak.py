@@ -1,17 +1,17 @@
 from telegram.ext import Updater, MessageHandler, Filters
 import telegram
 import openai
+import requests
 import locationtagger
-from bardapi import Bard
 from moviepy.editor import AudioFileClip
+from googletrans import Translator
 
 
-bard = Bard(
-    token="Your-BARD-API-Key")
-
+translator = Translator()
 
 openai.api_key = "Your-OpenAI-API-Key"
-TELEGRAM_API_TOKEN = "Telegram-API-Key"
+TELEGRAM_API_TOKEN = "Your-Telegram-API-Key"
+weather_api_key = "Your-Open-Weather-Map-API-Key"
 
 messages = [{"role": "system", "content": "You are Super Telegram GPT, a virtual agricultural \
             advisor in a Telegram bot that performs following task:\
@@ -19,6 +19,8 @@ messages = [{"role": "system", "content": "You are Super Telegram GPT, a virtual
             pest management, weed control, fertilizer recommendations, and other agricultural \
             practices. When users ask questions related to agriculture, provide informative and \
             helpful responses.\
+            2. Providing latest current or upcoming Government Schemes and Policies for farmers \
+            and their benefits.\
             2. Multilingual Support: Accommodate farmers who may speak different languages. \
             Respond to queries in a variety of languages to make your advice accessible to all.\
             3. Detection mechanism: To distinguish between related and unrelated queries, check \
@@ -35,71 +37,131 @@ messages = [{"role": "system", "content": "You are Super Telegram GPT, a virtual
             5. Real time Weather updates: Provide real time weather updates and forecasting"}]
 
 
-def text_message(update, context):
-    text = update.message.text
+def findWeatherUpdates(city_name, day):
+    # Let's get the city's coordinates (lat and lon)
+    url = f'https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={weather_api_key}'
+    print(url)
 
-    # Using BARD for getting real time weather updates and government schemes for farmers
-    try:
-        if "weather" in text.lower() or "Weather" in text.lower() or "scheme" in text.lower() or "policy" in text.lower() or \
-            "subsidy" in text.lower() or "schemes" in text.lower() or "policies" in text.lower() or \
-                "subsidies" in text.lower():
-            if "weather" in text.lower() or "Weather" in text.lower():
-                t = text.upper().split()    # here t is in list data type
-                text_1 = ' '.join(map(str, t))   # convert list to string
-                place_entity = locationtagger.find_locations(text=text_1)
-                city = place_entity.cities
-                region = place_entity.regions
-                country = place_entity.countries
-                print(f"City: {city}")
-                print(f"Region: {region}")
-                print(f"Country: {country}")
-                x = text.split()
-                days = 0
-                for i in x:
-                    if i.isnumeric():
-                        days = i
-                if days == 0:
-                    days = 3
+    # Let's parse the Json
+    req = requests.get(url)
+    data = req.json()
 
-                if city:
-                    msg = f"What is current weather of {city}, and also provide accurate forecasting \
-                        for next {days} days"
-                elif region:
-                    msg = f"What is current weather of {region}, and also provide accurate forecasting \
-                        for next {days} days"
-                elif country:
-                    msg = f"What is current weather of {country}, and also provide accurate forecasting \
-                        for next {days} days"
-                else:
-                    raise Exception
+    # Let's get the name, the longitude and latitude
+    name = data['name']
+    lon = data['coord']['lon']
+    lat = data['coord']['lat']
 
-            # for government schemes and subsidies
-            if "scheme" in text.lower() or "policy" in text.lower() or "subsidy" in text.lower() \
-                    or "schemes" in text.lower() or "policies" in text.lower() or "subsidies" in text.lower():
-                msg = "provide latest government schemes and subsidies for farmers and their benefits"
+    print(name, lon, lat)
 
-            print(f"Bard Reply: {msg}")
-            summary = bard.get_answer(str(msg))
-            Bard_reply = summary["content"]
-            print(f"{Bard_reply}")
-            update.message.reply_text(
-                text=f"*[Bot]:* {Bard_reply}", parse_mode=telegram.ParseMode.HTML)
+    # Let's now use the One Call Api to get the 8 day forecast
+
+    url2 = f'https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={weather_api_key}'
+    print(url2)
+
+    # Let's now parse the JSON
+    req2 = requests.get(url2)
+    data2 = req2.json()
+    print(data2)
+
+    # Let's now get the temp for the day and the weather conditions
+    days = []
+    descr = []
+
+    # We need to access 'list'
+    for i in data2['list'][0:day]:
+
+        # We notice that the temperature is in Kelvin, so we need to do -273.15 for every datapoint
+
+        # Let's start by days
+        # Let's round the decimal numbers to 2
+        days.append(round(i['main']['temp'] - 273.15, 2))
+
+        # Let's now get the weather condition and the description
+        # 'weather' [0] 'main' + 'weather' [0] 'description'
+        descr.append(i['weather'][0]['main'] + ": " +
+                     i['weather'][0]['description'])
+
+    print(days)
+    print(descr)
+
+    # Let's now format the output to make it readable
+    string = f'[ {name} - {day} days forecast]\n'
+
+    # Let's now loop for as much days as there available (8 in this case):
+    for i in range(len(days)):
+        if i == 0:
+            string += f'\nDay {i+1} (Today)\n'
+
+        elif i == 1:
+            string += f'\nDay {i+1} (Tomorrow)\n'
 
         else:
-            # Using OpenAI for rest of queries of farmers
-            messages.append({"role": "user", "content": update.message.text})
+            string += f'\nDay {i+1}\n'
+
+        string += 'Temperature:' + str(days[i]) + '°C' + "\n"
+        string += 'Conditions:' + descr[i] + '\n'
+
+    print(string)
+    return string
+
+
+def text_message(update, context):
+    text = update.message.text
+    print(f"Text: {text}")
+    try:
+        # If weather or temperature is present in sentence then find weather updates and forecast using openWeatherMap
+        translation = translator.translate(text, dest="en")
+        if "weather" in translation.text.lower() or "Weather" in translation.text.lower() \
+                or "WEATHER" in translation.text.lower() or "temperature" in translation.text.lower() \
+                or "Temperature" in translation.text.lower() or "TEMPERATURE" in translation.text.lower():
+            t = translation.text.split()    # here t is in list data type
+            print(t)
+            text_1 = ' '.join(map(str, t))   # convert list to string
+            print(text_1)
+            place_entity = locationtagger.find_locations(text=text_1)
+            c = place_entity.cities
+            if len(c) == 0:
+                c = place_entity.regions
+            if len(c) == 0:
+                c = place_entity.countries
+
+            city = ' '.join(map(str, c))
+            print(f"City: {city}")
+            x = text.split()
+            days = 0
+            for i in x:
+                if i.isnumeric():
+                    days = i
+            if days == 0:
+                days = 7
+
+            if city:
+                st = findWeatherUpdates(city, days)
+                origin_st = translator.translate(st, dest=translation.src)
+                update.message.reply_text(
+                    text=f"*[Bot]:* {origin_st.text}", parse_mode=telegram.ParseMode.MARKDOWN)
+            else:
+                raise Exception
+
+        # Using OpenAI for rest of queries of farmers
+        else:
+            messages.append({"role": "user", "content": translation.text})
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
                 temperature=0.7
             )
             ChatGPT_reply = response["choices"][0]["message"]["content"]
-            print(f"GPT reply: {ChatGPT_reply}")
+            print(f"GPT reply (in English): {ChatGPT_reply}")
+            origin_ChatGPT_reply = translator.translate(
+                ChatGPT_reply, dest=translation.src)
+            print(f"Origin reply: {origin_ChatGPT_reply}")
             update.message.reply_text(
-                text=f"*[Bot]:* {ChatGPT_reply}", parse_mode=telegram.ParseMode.MARKDOWN)
+                text=f"*[Bot]:* {origin_ChatGPT_reply.text}", parse_mode=telegram.ParseMode.HTML)
             messages.append({"role": "assistant", "content": ChatGPT_reply})
+
     except:
-        err_msg = "Kindly re-write the Query correctly or mention city or region clearly in order in case of Weather Updates and forecasting!"
+        err_msg = "Kindly re-write or re-speak the Query correctly or mention city name clearly in case of Weather Updates and forecasting!"
         update.message.reply_text(
             text=f"*[Bot]:* {err_msg}", parse_mode=telegram.ParseMode.MARKDOWN)
 
@@ -118,68 +180,60 @@ def voice_message(update, context):
 
     text = transcript
     print(f"Transcript: {transcript}")
-    # Using BARD for getting real time weather updates and government schemes for farmers
     try:
-        if "weather" in text.lower() or "Weather" in text.lower() or "scheme" in text.lower() or "policy" in text.lower() or \
-            "subsidy" in text.lower() or "schemes" in text.lower() or "policies" in text.lower() or \
-                "subsidies" in text.lower():
-            if "weather" in text.lower() or "Weather" in text.lower():
-                t = text.upper().split()    # here t is in list data type
-                text_1 = ' '.join(map(str, t))   # convert list to string
-                place_entity = locationtagger.find_locations(text=text_1)
-                city = place_entity.cities
-                region = place_entity.regions
-                country = place_entity.countries
-                print(f"City: {city}")
-                print(f"Region: {region}")
-                print(f"Country: {country}")
-                x = text.split()
-                days = 0
-                for i in x:
-                    if i.isnumeric():
-                        days = i
-                if days == 0:
-                    days = 3
+        # If weather or temperature is present in sentence then find weather updates and forecast using openWeatherMap
+        translation = translator.translate(text, dest="en")
+        if "weather" in translation.text.lower() or "Weather" in translation.text.lower() \
+                or "WEATHER" in translation.text.lower() or "temperature" in translation.text.lower() \
+                or "Temperature" in translation.text.lower() or "TEMPERATURE" in translation.text.lower():
+            t = translation.text.split()    # here t is in list data type
+            print(t)
+            text_1 = ' '.join(map(str, t))   # convert list to string
+            print(text_1)
+            place_entity = locationtagger.find_locations(text=text_1)
+            c = place_entity.cities
+            if len(c) == 0:
+                c = place_entity.regions
+            if len(c) == 0:
+                c = place_entity.countries
 
-                if city:
-                    msg = f"What is current weather of {city}, and also provide accurate forecasting \
-                        for next {days} days"
-                elif region:
-                    msg = f"What is current weather of {region}, and also provide accurate forecasting \
-                        for next {days} days"
-                elif country:
-                    msg = f"What is current weather of {country}, and also provide accurate forecasting \
-                        for next {days} days"
-                else:
-                    raise Exception
+            city = ' '.join(map(str, c))
+            print(f"City: {city}")
+            x = text.split()
+            days = 0
+            for i in x:
+                if i.isnumeric():
+                    days = i
+            if days == 0:
+                days = 7
 
-            # for government schemes and subsidies
-            if "scheme" in text.lower() or "policy" in text.lower() or "subsidy" in text.lower() \
-                    or "schemes" in text.lower() or "policies" in text.lower() or "subsidies" in text.lower():
-                msg = "provide latest government schemes and subsidies for farmers and their benefits"
+            if city:
+                st = findWeatherUpdates(city, days)
+                origin_st = translator.translate(st, dest=translation.src)
+                update.message.reply_text(
+                    text=f"*[Bot]:* {origin_st.text}", parse_mode=telegram.ParseMode.MARKDOWN)
+            else:
+                raise Exception
 
-            print(f"Bard Reply: {msg}")
-            summary = bard.get_answer(str(msg))
-            Bard_reply = summary["content"]
-            print(f"{Bard_reply}")
-            update.message.reply_text(
-                text=f"*[Bot]:* {Bard_reply}", parse_mode=telegram.ParseMode.HTML)
-
+        # Using OpenAI for rest of queries of farmers
         else:
-            # Using OpenAI for rest of queries of farmers
-            messages.append({"role": "user", "content": transcript})
+            messages.append({"role": "user", "content": translation.text})
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
                 temperature=0.7
             )
             ChatGPT_reply = response["choices"][0]["message"]["content"]
-            print(f"GPT reply: {ChatGPT_reply}")
+            print(f"GPT reply (in English): {ChatGPT_reply}")
+            origin_ChatGPT_reply = translator.translate(
+                ChatGPT_reply, dest=translation.src)
+            print(f"Origin reply: {origin_ChatGPT_reply}")
             update.message.reply_text(
-                text=f"*[Bot]:* {ChatGPT_reply}", parse_mode=telegram.ParseMode.MARKDOWN)
+                text=f"*[Bot]:* {origin_ChatGPT_reply.text}", parse_mode=telegram.ParseMode.HTML)
             messages.append({"role": "assistant", "content": ChatGPT_reply})
+
     except:
-        err_msg = "Kindly re-write the Query correctly or mention city or region clearly in order in case of Weather Updates and forecasting!"
+        err_msg = "Kindly re-write or re-speak the Query correctly or mention city name clearly in case of Weather Updates and forecasting!"
         update.message.reply_text(
             text=f"*[Bot]:* {err_msg}", parse_mode=telegram.ParseMode.MARKDOWN)
 
