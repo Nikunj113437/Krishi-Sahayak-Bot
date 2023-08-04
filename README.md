@@ -31,7 +31,7 @@ Krishi Sahayak is your virtual farming assistant, a super Telegram bot designed 
 * Python (Programming Language)
 * OpenAI GPT-3.5 (Large Language Model)
 * Telegram API (Bot Interaction)
-* Google Bard API Key
+* Open Weather Map API
 
 ## Installation
 1. Search for "Krishi Sahayak" on Telegram or click [here](https://web.telegram.org/k/#@krishi_sahayak_bot) to start a chat with the bot.
