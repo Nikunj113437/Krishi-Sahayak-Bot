@@ -36,6 +36,10 @@ messages = [{"role": "system", "content": "You are Super Telegram GPT, a virtual
             assist you!\
             5. Real time Weather updates: Provide real time weather updates and forecasting"}]
 
+weather_message = [{"role": "system", "content": "You are very Helpful guide who is only able to find out \
+                city name for which the user is asking for weather or temperature updates.Respond only in a single \
+                word i.e Tell only the city name. And don't respond to other queries of user"}]
+
 
 def findWeatherUpdates(city_name, day):
     # Let's get the city's coordinates (lat and lon)
@@ -114,18 +118,15 @@ def text_message(update, context):
         if "weather" in translation.text.lower() or "Weather" in translation.text.lower() \
                 or "WEATHER" in translation.text.lower() or "temperature" in translation.text.lower() \
                 or "Temperature" in translation.text.lower() or "TEMPERATURE" in translation.text.lower():
-            t = translation.text.split()    # here t is in list data type
-            print(t)
-            text_1 = ' '.join(map(str, t))   # convert list to string
-            print(text_1)
-            place_entity = locationtagger.find_locations(text=text_1)
-            c = place_entity.cities
-            if len(c) == 0:
-                c = place_entity.regions
-            if len(c) == 0:
-                c = place_entity.countries
 
-            city = ' '.join(map(str, c))
+            weather_message.append(
+                {"role": "user", "content": translation.text})
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=weather_message,
+                temperature=0.7
+            )
+            city = response["choices"][0]["message"]["content"]
             print(f"City: {city}")
             x = text.split()
             days = 0
@@ -155,7 +156,7 @@ def text_message(update, context):
             print(f"GPT reply (in English): {ChatGPT_reply}")
             origin_ChatGPT_reply = translator.translate(
                 ChatGPT_reply, dest=translation.src)
-            print(f"Origin reply: {origin_ChatGPT_reply}")
+            print(f"Original Language reply: {origin_ChatGPT_reply}")
             update.message.reply_text(
                 text=f"*[Bot]:* {origin_ChatGPT_reply.text}", parse_mode=telegram.ParseMode.HTML)
             messages.append({"role": "assistant", "content": ChatGPT_reply})
@@ -186,18 +187,15 @@ def voice_message(update, context):
         if "weather" in translation.text.lower() or "Weather" in translation.text.lower() \
                 or "WEATHER" in translation.text.lower() or "temperature" in translation.text.lower() \
                 or "Temperature" in translation.text.lower() or "TEMPERATURE" in translation.text.lower():
-            t = translation.text.split()    # here t is in list data type
-            print(t)
-            text_1 = ' '.join(map(str, t))   # convert list to string
-            print(text_1)
-            place_entity = locationtagger.find_locations(text=text_1)
-            c = place_entity.cities
-            if len(c) == 0:
-                c = place_entity.regions
-            if len(c) == 0:
-                c = place_entity.countries
 
-            city = ' '.join(map(str, c))
+            weather_message.append(
+                {"role": "user", "content": translation.text})
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=weather_message,
+                temperature=0.7
+            )
+            city = response["choices"][0]["message"]["content"]
             print(f"City: {city}")
             x = text.split()
             days = 0
@@ -227,7 +225,7 @@ def voice_message(update, context):
             print(f"GPT reply (in English): {ChatGPT_reply}")
             origin_ChatGPT_reply = translator.translate(
                 ChatGPT_reply, dest=translation.src)
-            print(f"Origin reply: {origin_ChatGPT_reply}")
+            print(f"Original Language reply: {origin_ChatGPT_reply}")
             update.message.reply_text(
                 text=f"*[Bot]:* {origin_ChatGPT_reply.text}", parse_mode=telegram.ParseMode.HTML)
             messages.append({"role": "assistant", "content": ChatGPT_reply})
