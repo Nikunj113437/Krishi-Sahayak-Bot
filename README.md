@@ -40,6 +40,12 @@ Krishi Sahayak is your virtual farming assistant, a super Telegram bot designed 
 
 ## Contributions
 Krishi Sahayak welcomes contributions from the farming community and developers. If you have ideas for enhancements or encounter any issues, please feel free to open an issue or submit a pull request.
+## SnapShots of Working Bot
+<img width="645" alt="image" src="https://github.com/Nikunj113437/Krishi-Sahayak-Bot/assets/72342649/af9182ea-dbf9-4b27-8492-fd3ccb735182">
+<img width="651" alt="image" src="https://github.com/Nikunj113437/Krishi-Sahayak-Bot/assets/72342649/519f4aad-c4e8-4c5c-8423-f871196544b0">
+<img width="700" alt="image" src="https://github.com/Nikunj113437/Krishi-Sahayak-Bot/assets/72342649/008ba678-0f9c-4524-95ef-5318ce8ba088">
+<img width="704" alt="image" src="https://github.com/Nikunj113437/Krishi-Sahayak-Bot/assets/72342649/b2b6eda6-2577-4651-b11f-6a7a2ad33f1c">
+<img width="707" alt="image" src="https://github.com/Nikunj113437/Krishi-Sahayak-Bot/assets/72342649/639eb785-df74-47d5-a8b1-08cbb860deb1">
 
 ## Credits
 Krishi Sahayak is the collaborative effort of **Nikunj Bansal** who is passionate about supporting farmers through technology.
