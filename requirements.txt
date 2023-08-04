@@ -1,0 +1,11 @@
+# run this command to install all packages: pip install -r requirements.txt
+
+python-telegram-bot==13.0
+openai
+moviepy
+openai_whisper==20230314
+GoogleBard==0.0.7
+pyttsx3==2.90
+SpeechRecognition==3.10.0
+playsound==1.2.2
+PyAudio==0.2.13
